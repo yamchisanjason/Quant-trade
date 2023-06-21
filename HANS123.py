@@ -70,6 +70,8 @@ class Hans123:
     def trading_strategy(self, data):
         #set initial values
         capital = self.initcap
+        take_profit = 0
+        stop_loss = 0
         position_size = capital * 0.01
         start_time = datetime.strptime(data['Dates'].iloc[0], "%Y.%m.%d %H:%M")
         end_time = start_time + timedelta(minutes=30)
@@ -98,7 +100,7 @@ class Hans123:
                 elif data['Close'].iloc[i] <= low:
                     entry_price = low
                     stop_loss = high
-                    take_profit = entry_price + (self.rr_ratio * (entry_price - stop_loss))
+                    take_profit = entry_price - (self.rr_ratio * (entry_price - stop_loss))
                     predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=60)
                     take_profit = min(take_profit, predicted_take_profit)           #use predicted take_profit if lower
                     loss = position_size * (stop_loss - entry_price)
@@ -120,7 +122,7 @@ class Hans123:
         # print(df)
 
         #execute trading strategy
-        capital, entry_price, take_profit, stop_loss = self.trading_strategy(data)
+        capital, entry_price, take_profit, stop_loss = self.trading_strategy(df)
 
         #statistics
         returns = (capital - self.initcap) / self.initcap
