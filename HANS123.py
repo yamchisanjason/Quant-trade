@@ -3,8 +3,7 @@ import numpy as np
 import quantstats as qs
 from scipy import stats
 import datetime
-from datetime import datetime, date, timedelta
-import time
+from datetime import datetime, date, timedelta, time
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import keras
@@ -73,13 +72,27 @@ class Hans123:
         take_profit = 0
         stop_loss = 0
         position_size = capital * 0.01
-        start_time = datetime.strptime(data['Dates'].iloc[0], "%Y.%m.%d %H:%M")
-        end_time = start_time + timedelta(minutes=30)
-        high = data['High'].iloc[0]
-        low = data['Low'].iloc[0]
+        start_time = None
+        end_time = None
+        high = 0
+        low = np.inf
         entry_price = None
 
+
+
         #wait for 30 mins and record high and low prices
+        for i in range(len(data)):
+            current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
+            if current_time.time() >= time(hour=9):
+                start_time = current_time
+                end_time = start_time + timedelta(minutes=30)
+                high = data['High'].iloc[i]
+                low = data['Low'].iloc[i]
+                break
+
+
+
+
         for i in range(len(data)):
             current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
             if current_time < end_time:
@@ -116,7 +129,7 @@ class Hans123:
 
     def run_strategy(self, EURUSDmins_data):
         #read csv
-        data = pd.read_csv(r'C:\Users\jason.yam\EURUSDmins_data.csv')
+        data = pd.read_csv(r'C:\Users\jason.yam\GBPUSDmins_data.csv')
         df = data.dropna()
         df['Dates'] = pd.to_datetime(df['Dates'], format="%d/%m/%Y %H:%M").dt.strftime("%Y.%m.%d %H:%M")
         # print(df)
@@ -148,7 +161,7 @@ class Hans123:
 
 if __name__ == '__main__':
     strategy = Hans123(initcap=10000)
-    capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\EURUSDmins_data.csv')
+    capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\GBPUSDmins_data.csv')
 
 
 
