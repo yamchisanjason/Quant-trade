@@ -28,7 +28,7 @@ class Hans123:
             X.append(v)
             y.append(data[i+window_size])
         return np.array(X), np.array(y)
-
+        print('hello1')
 
 
     def build_train_lstm_model(self, data, window_size, epochs=100):
@@ -40,30 +40,30 @@ class Hans123:
         #preprocess data
         scaler = MinMaxScaler()
         data_scaled = scaler.fit_transform(data[['Open', 'Close', 'High', 'Low']])
-
+        print('hello2')
         #create dataset
         X, y = self.preprocess_data(data_scaled, window_size)
-
+        print('hello3')
 
         # train-test split
         train_size = int(len(X) * 0.8)
         X_train, X_test = X[0:train_size], X[train_size:len(X)]
         y_train, y_test = y[0:train_size], y[train_size:len(y)]
-
+        print('hello4')
         # LSTM model
         model = Sequential()
         model.add(LSTM(50, input_shape=(X_train.shape[1], X_train.shape[2])))
         model.add(Dense(1))
-        model.dropout(0.2)
+        model.add(Dropout(0.2))
         model.compile(loss='mean_squared_error', optimizer='adam')
         model.fit(X_train, y_train, epochs=epochs, batch_size=32)
-
+        print('hello5')
         # Generate predictions for next day's market price
         last_30_days = data_scaled[-30:]
         last_30_days = last_30_days.reshape((1, last_30_days.shape[0], last_30_days.shape[1]))
         predicted_price = model.predict(last_30_days)
         predicted_price = scaler.inverse_transform(predicted_price)[0][0]
-
+        print('hello6')
         return predicted_price
 
     def trading_strategy(self, data):
@@ -84,13 +84,14 @@ class Hans123:
         for i in range(len(data)):
             current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
             if current_time.time() >= time(hour=9):
+                print(current_time.time())
                 start_time = current_time
                 end_time = start_time + timedelta(minutes=30)
                 high = data['High'].iloc[i]
                 low = data['Low'].iloc[i]
                 break
 
-
+                print('hello7')
 
 
         for i in range(len(data)):
@@ -123,9 +124,9 @@ class Hans123:
                 else:
                     break
 
-
+                print('hello8')
         return capital, entry_price, take_profit, stop_loss
-
+        print('hello9')
 
     def run_strategy(self, EURUSDmins_data):
         #read csv
@@ -133,9 +134,19 @@ class Hans123:
         df = data.dropna()
         df['Dates'] = pd.to_datetime(df['Dates'], format="%d/%m/%Y %H:%M").dt.strftime("%Y.%m.%d %H:%M")
         # print(df)
+        print('hello10')
+
+        window_size = 60
+        X, y = self.preprocess_data(df['Close'], window_size)
+
+        model = self.build_train_lstm_model(X, y, window_size)
+
+        predictions = model.predict(X)
 
         #execute trading strategy
         capital, entry_price, take_profit, stop_loss = self.trading_strategy(df)
+
+
 
         #statistics
         returns = (capital - self.initcap) / self.initcap
