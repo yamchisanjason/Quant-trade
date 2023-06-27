@@ -76,12 +76,14 @@ class Hans123:
         capital = self.initcap
         take_profit = 0
         stop_loss = 0
-        position_size = capital * 0.01
+        position_size = capital * 0.1
         start_time = None
         end_time = None
         high = 0
         low = np.inf
         entry_price = None
+        capital_values = []
+        dates = []
 
         # loop-through all the data
         i = 0
@@ -159,11 +161,23 @@ class Hans123:
                             return_pct = (entry_price - exit_price) / entry_price
                             print('Trade return:', -return_pct, 'with entry capital:', capital)
 
+
+                        capital_values.append(capital)
+                        dates.append(data['Dates'].iloc[i-1])
+
                 entry_price = None
 
-
-
             i += 1
+
+        print(capital_values)
+        #plot the cumulated capital over time
+        plt.plot(dates, capital_values)
+        plt.xlabel('Time')
+        plt.ylabel('Cumulated Capital')
+        plt.xticks(rotation=45)
+        plt.show()
+
+
 
 
         return capital, entry_price, take_profit, stop_loss
