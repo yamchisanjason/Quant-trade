@@ -23,53 +23,53 @@ class Hans123:
 
 
 
-    def preprocess_data(self, data, window_size):
-        X, y = [], []
-        for i in range(len(X) - window_size):
-            v = data[i: (i + window_size)].values
-            X.append(v)
-            y.append(data[i+window_size])
-        return np.array(X), np.array(y)
-        print('hello1')
-
-
-    def build_train_lstm_model(self, data, window_size, epochs=100):
-        # # create dataset
-        # X, y = preprocess_data(data, window_size)
-        # X = X.reshape(X.shape[0], X.shape[1])
-
-
-        #preprocess data
-        scaler = MinMaxScaler()
-        data_scaled = scaler.fit_transform(data[['Open', 'Close', 'High', 'Low']])
-        print('hello2')
-
-        #create dataset
-        X, y = self.preprocess_data(data_scaled, window_size)
-        print('hello3')
-
-        # train-test split
-        train_size = int(len(X) * 0.8)
-        X_train, X_test = X[0:train_size], X[train_size:len(X)]
-        y_train, y_test = y[0:train_size], y[train_size:len(y)]
-        print('hello4')
-
-        # LSTM model
-        model = Sequential()
-        model.add(LSTM(50, input_shape=(X_train.shape[1], X_train.shape[2])))
-        model.add(Dense(1))
-        model.add(Dropout(0.2))
-        model.compile(loss='mean_squared_error', optimizer='adam')
-        model.fit(X_train, y_train, epochs=epochs, batch_size=32)
-        print('hello5')
-
-        # Generate predictions for next day's market price
-        last_30_days = data_scaled[-30:]
-        last_30_days = last_30_days.reshape((1, last_30_days.shape[0], last_30_days.shape[1]))
-        predicted_price = model.predict(last_30_days)
-        predicted_price = scaler.inverse_transform(predicted_price)[0][0]
-        print('hello6')
-        return predicted_price
+    # def preprocess_data(self, data, window_size):
+    #     X, y = [], []
+    #     for i in range(len(X) - window_size):
+    #         v = data[i: (i + window_size)].values
+    #         X.append(v)
+    #         y.append(data[i+window_size])
+    #     return np.array(X), np.array(y)
+    #     print('hello1')
+    #
+    #
+    # def build_train_lstm_model(self, data, window_size, epochs=100):
+    #     # # create dataset
+    #     # X, y = preprocess_data(data, window_size)
+    #     # X = X.reshape(X.shape[0], X.shape[1])
+    #
+    #
+    #     #preprocess data
+    #     scaler = MinMaxScaler()
+    #     data_scaled = scaler.fit_transform(data[['Open', 'Close', 'High', 'Low']])
+    #     print('hello2')
+    #
+    #     #create dataset
+    #     X, y = self.preprocess_data(data_scaled, window_size)
+    #     print('hello3')
+    #
+    #     # train-test split
+    #     train_size = int(len(X) * 0.8)
+    #     X_train, X_test = X[0:train_size], X[train_size:len(X)]
+    #     y_train, y_test = y[0:train_size], y[train_size:len(y)]
+    #     print('hello4')
+    #
+    #     # LSTM model
+    #     model = Sequential()
+    #     model.add(LSTM(50, input_shape=(X_train.shape[1], X_train.shape[2])))
+    #     model.add(Dense(1))
+    #     model.add(Dropout(0.2))
+    #     model.compile(loss='mean_squared_error', optimizer='adam')
+    #     model.fit(X_train, y_train, epochs=epochs, batch_size=32)
+    #     print('hello5')
+    #
+    #     # Generate predictions for next day's market price
+    #     last_30_days = data_scaled[-30:]
+    #     last_30_days = last_30_days.reshape((1, last_30_days.shape[0], last_30_days.shape[1]))
+    #     predicted_price = model.predict(last_30_days)
+    #     predicted_price = scaler.inverse_transform(predicted_price)[0][0]
+    #     print('hello6')
+    #     return predicted_price
 
     def trading_strategy(self, data):
         # set initial values
@@ -83,67 +83,46 @@ class Hans123:
         low = np.inf
         entry_price = None
 
-        # wait for 30 mins and record high and low prices
-        for i in range(len(data)):
+        # loopthrough all the data
+        i = 0
+        while i < len(data):
+            # wait for 30 mins and record high and low prices
             current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
+            #print('9')
             if current_time.time() >= time(hour=9):
                 start_time = current_time
                 end_time = start_time + timedelta(minutes=30)
+                high = 0
+                low = np.inf
                 print(start_time)
                 print(end_time)
-                print('12')
-                break
+                print('8')
 
-        for i in range(len(data)):
-            current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
-
-            if current_time >= start_time and current_time <= end_time:
-                high = max(high, data['High'].iloc[i])
-                low = min(low, data['Low'].iloc[i])
+                while current_time <= end_time and i < len(data):
+                    current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
 
 
-                print('13')
+                    high = max(high, data['High'].iloc[i])
+                    low = min(low, data['Low'].iloc[i])
+                    i += 1
 
-            elif current_time > end_time:
-                print('14')
-                break
-        print(high)
-        print(low)
-
-
-        for i in range(len(data)):
-            current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
-
-            if current_time > end_time:
-                # execute trade if the market price rises above or below the high and low price
-                if data['Close'].iloc[i] >= high:
+                if data['Close'].iloc[i-1] >= high:
                     entry_price = high
                     stop_loss = low
-                    take_profit = entry_price + (self.rr_ratio * (entry_price - stop_loss))
-                    predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=60)
-                    take_profit = max(take_profit, predicted_take_profit)  # use predicted take_profit if higher
+                    take_profit = entry_price + (self.rr_ratio) * (entry_price - stop_loss)
                     profit = position_size * (take_profit - entry_price)
                     capital += profit
-                    print('15')
+                    print('Buy signal generated at', data['Dates'].iloc[i - 1])
 
-                    break
-
-                elif data['Close'].iloc[i] <= low:
+                elif data['Close'].iloc[i - 1] <= low:
                     entry_price = low
                     stop_loss = high
-                    take_profit = entry_price - (self.rr_ratio * (entry_price - stop_loss))
-                    predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=60)
-                    take_profit = min(take_profit, predicted_take_profit)  # use predicted take_profit if lower
+                    take_profit = entry_price - (self.rr_ratio * (stop_loss - entry_price))
                     loss = position_size * (stop_loss - entry_price)
                     capital -= loss
-                    print('16')
+                    print('Sell signal generated at', data['Dates'].iloc[i - 1])
 
-                    break
-
-                else:
-                    print('17')
-
-                    break
+            i += 1
 
         return capital, entry_price, take_profit, stop_loss
 
