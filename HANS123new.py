@@ -84,6 +84,8 @@ class Hans123:
         entry_price = None
         capital_values = []
         dates = []
+        num_trades = 0
+        num_winningtrades = 0
 
         # loop-through all the data
         i = 0
@@ -98,7 +100,7 @@ class Hans123:
                 low = np.inf
                 print(start_time)
                 print(end_time)
-                print('8')
+
 
                 while current_time < end_time and i < len(data):
                     current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
@@ -110,6 +112,7 @@ class Hans123:
                     i += 1
                 print(high)
                 print(low)
+                print('-')
 
                 if data['Close'].iloc[i] >= high:
                     entry_price = high
@@ -156,18 +159,30 @@ class Hans123:
                             return_pct = (exit_price - entry_price) / entry_price
                             print('Trade return:', return_pct, 'with entry capital:', capital)
                             capital += capital * return_pct
+                            num_winningtrades += 1
 
                         else:
                             return_pct = (entry_price - exit_price) / entry_price
                             print('Trade return:', -return_pct, 'with entry capital:', capital)
-
+                            capital += capital * return_pct
+                            num_winningtrades += 1
 
                         capital_values.append(capital)
                         dates.append(data['Dates'].iloc[i-1])
+                        num_trades += 1
 
                 entry_price = None
 
             i += 1
+        print(num_trades)
+        print(num_winningtrades)
+        if num_trades > 0:
+            win_rate = num_winningtrades / num_trades
+            print('Win rate:', win_rate)
+        else:
+            print('No trades executed.')
+
+
 
         print(capital_values)
         #plot the cumulated capital over time
@@ -202,18 +217,14 @@ class Hans123:
         daily_returns = returns / (len(data) / (24*60))
         mean = np.mean(data['Close'])
         std = np.std(data['Close'])
-        corr = stats.pearsonr(data['Close'], data['Volume'])[0]
-        sharpe_ratio = (daily_returns - 0.0377) / std        #assume risk-free rate = 3.77%
+        sharpe_ratio = (returns - 0.0377) / std        #assume risk-free rate = 3.77%
 
-        print('Capital:', capital)
-        print('Entry Price:', entry_price)
-        print('Take Profit:', take_profit)
-        print('Stop Loss:', stop_loss)
+        print('Final Capital:', capital)
+        print('Entry Price:', self.initcap)
         print('Returns:', returns)
         print('Daily Returns:', daily_returns)
         print('Mean:', mean)
         print('Standard Deviation:', std)
-        print('Correlation:', corr)
         print('Sharpe Ratio:', sharpe_ratio)
 
         return capital, entry_price, take_profit, stop_loss
