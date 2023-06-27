@@ -76,7 +76,7 @@ class Hans123:
         capital = self.initcap
         take_profit = 0
         stop_loss = 0
-        position_size = capital * 0.02
+        position_size = capital * 0.01
         start_time = None
         end_time = None
         high = 0
@@ -89,7 +89,7 @@ class Hans123:
             # wait for 30 mins and record high and low prices
             current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
             #print('9')
-            if current_time.time() >= time(hour=9) and current_time.time() < time(hour=9, minute=30):
+            if current_time.time() >= time(hour=9) and current_time.time() <= time(hour=9, minute=30):
                 start_time = current_time
                 end_time = start_time + timedelta(minutes=30)
                 high = 0
@@ -109,21 +109,21 @@ class Hans123:
                 print(high)
                 print(low)
 
-                if data['Close'].iloc[i-1] >= high:
+                if data['Close'].iloc[i] >= high:
                     entry_price = high
                     stop_loss = low
                     take_profit = entry_price + (self.rr_ratio) * (entry_price - stop_loss)
                     profit = position_size * (take_profit - entry_price)
                     capital += profit
-                    print('Buy signal generated at', data['Dates'].iloc[i - 1], 'with entry price', entry_price, '\ncumulated capital:', capital)
+                    print('Buy signal generated at', data['Dates'].iloc[i ], 'with entry price', entry_price, '\ncumulated capital:', capital)
 
-                elif data['Close'].iloc[i - 1] <= low:
+                elif data['Close'].iloc[i ] <= low:
                     entry_price = low
                     stop_loss = high
                     take_profit = entry_price - (self.rr_ratio * (stop_loss - entry_price))
                     loss = position_size * (stop_loss - entry_price)
                     capital -= loss
-                    print('Sell signal generated at', data['Dates'].iloc[i - 1], 'with entry price', entry_price, '\ncumulated capital:', capital)
+                    print('Sell signal generated at', data['Dates'].iloc[i ], 'with entry price', entry_price, '\ncumulated capital:', capital)
 
                 if entry_price is not None:
                     #check if take profit or stop loss is hit
@@ -135,6 +135,8 @@ class Hans123:
                         if data['High'].iloc[i] >= take_profit:
                             exit_price = take_profit
                             print('Take profit hit at', data['Dates'].iloc[i], 'with exit price', exit_price)
+
+                            break
 
                         elif data['Low'].iloc[i] <= stop_loss:
                             exit_price = stop_loss
