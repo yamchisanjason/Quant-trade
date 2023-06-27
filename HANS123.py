@@ -3,10 +3,9 @@ import numpy as np
 import quantstats as qs
 from scipy import stats
 import datetime
-from datetime import datetime, date, timedelta, time
+from datetime import datetime, timedelta, time
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import keras
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout
 from sklearn.preprocessing import MinMaxScaler
@@ -41,6 +40,7 @@ class Hans123:
         scaler = MinMaxScaler()
         data_scaled = scaler.fit_transform(data[['Open', 'Close', 'High', 'Low']])
         print('hello2')
+
         #create dataset
         X, y = self.preprocess_data(data_scaled, window_size)
         print('hello3')
@@ -49,7 +49,10 @@ class Hans123:
         train_size = int(len(X) * 0.8)
         X_train, X_test = X[0:train_size], X[train_size:len(X)]
         y_train, y_test = y[0:train_size], y[train_size:len(y)]
+        print(X_train)
+        print(y_train)
         print('hello4')
+
         # LSTM model
         model = Sequential()
         model.add(LSTM(50, input_shape=(X_train.shape[1], X_train.shape[2])))
@@ -58,6 +61,7 @@ class Hans123:
         model.compile(loss='mean_squared_error', optimizer='adam')
         model.fit(X_train, y_train, epochs=epochs, batch_size=32)
         print('hello5')
+
         # Generate predictions for next day's market price
         last_30_days = data_scaled[-30:]
         last_30_days = last_30_days.reshape((1, last_30_days.shape[0], last_30_days.shape[1]))
@@ -67,7 +71,7 @@ class Hans123:
         return predicted_price
 
     def trading_strategy(self, data):
-        #set initial values
+        # set initial values
         capital = self.initcap
         take_profit = 0
         stop_loss = 0
@@ -78,70 +82,78 @@ class Hans123:
         low = np.inf
         entry_price = None
 
-
-
-        #wait for 30 mins and record high and low prices
-        for i in range(len(data)):
+       #loopthrough all the data
+        i = 0
+        while i < len(data):
+            # wait for 30 mins and record high and low prices
             current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
             if current_time.time() >= time(hour=9):
-                print(current_time.time())
                 start_time = current_time
-                end_time = start_time + timedelta(minutes=30)
-                high = data['High'].iloc[i]
-                low = data['Low'].iloc[i]
-                break
+                end_time = start_time
+                high = 0
+                low = np.inf
 
-                print('hello7')
+                while i < len(data):
+                    current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
 
+                    if current_time >= start_time and current_time <= end_time:
+                        high = max(high, data['High'].iloc[i])
+                        low = min(low, data['Low'].iloc[i])
+                        i += 1
 
-        for i in range(len(data)):
-            current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
-            if current_time < end_time:
-                high = max(high, data['High'].iloc[i])
-                low = min(low, data['Low'].iloc[i])
+                    elif current_time > end_time:
+                        while i < len(data):
+                            current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
+
+                            if current_time.date() != start_time.date():
+                                break
+
+                            if data['Close'].iloc[i] >= high:
+                                entry_price = high
+                                stop_loss = low
+                                take_profit = entry_price + (self.rr_ratio) * (entry_price - stop_loss)
+                                predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=10)
+                                take_profit = max(take_profit, predicted_take_profit)  # use predicted take_profit if higher
+                                profit = position_size * (take_profit - entry_price)
+                                capital += profit
+
+                                break
+
+                            elif data['Close'].iloc[i] <= low:
+                                entry_price = low
+                                stop_loss = high
+                                take_profit = entry_price - (self.rr_ratio * (stop_loss - entry_price))
+                                predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=10)
+                                take_profit = min(take_profit,
+                                                  predicted_take_profit)  # use predicted take_profit if lower
+                                loss = position_size * (stop_loss - entry_price)
+                                capital -= loss
+
+                                break
+
+                            i += 1
+
+                    else:
+                        break
             else:
-            #execute trade if the market price rises above or below the high and low price
-                if data['Close'].iloc[i] >= high:
-                    entry_price = high
-                    stop_loss = low
-                    take_profit = entry_price + (self.rr_ratio * (entry_price - stop_loss))
-                    predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=60)
-                    take_profit = max(take_profit, predicted_take_profit)           #use predicted take_profit if higher
-                    profit = position_size * (take_profit - entry_price)
-                    capital += profit
-                    break
+                i += 1
 
-                elif data['Close'].iloc[i] <= low:
-                    entry_price = low
-                    stop_loss = high
-                    take_profit = entry_price - (self.rr_ratio * (entry_price - stop_loss))
-                    predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=60)
-                    take_profit = min(take_profit, predicted_take_profit)           #use predicted take_profit if lower
-                    loss = position_size * (stop_loss - entry_price)
-                    capital -= loss
-                    break
-
-                else:
-                    break
-
-                print('hello8')
         return capital, entry_price, take_profit, stop_loss
-        print('hello9')
+                        
+
+
+
+
 
     def run_strategy(self, EURUSDmins_data):
         #read csv
-        data = pd.read_csv(r'C:\Users\jason.yam\GBPUSDmins_data.csv')
+        data = pd.read_csv(r'C:\Users\jason.yam\EURUSDmins_data.csv')
         df = data.dropna()
         df['Dates'] = pd.to_datetime(df['Dates'], format="%d/%m/%Y %H:%M").dt.strftime("%Y.%m.%d %H:%M")
         # print(df)
         print('hello10')
 
-        window_size = 60
-        X, y = self.preprocess_data(df['Close'], window_size)
 
-        model = self.build_train_lstm_model(X, y, window_size)
-
-        predictions = model.predict(X)
 
         #execute trading strategy
         capital, entry_price, take_profit, stop_loss = self.trading_strategy(df)
@@ -172,7 +184,7 @@ class Hans123:
 
 if __name__ == '__main__':
     strategy = Hans123(initcap=10000)
-    capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\GBPUSDmins_data.csv')
+    capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\EURUSDmins_data.csv')
 
 
 
