@@ -76,20 +76,20 @@ class Hans123:
         capital = self.initcap
         take_profit = 0
         stop_loss = 0
-        position_size = capital * 0.01
+        position_size = capital * 0.02
         start_time = None
         end_time = None
         high = 0
         low = np.inf
         entry_price = None
 
-        # loopthrough all the data
+        # loop-through all the data
         i = 0
         while i < len(data):
             # wait for 30 mins and record high and low prices
             current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
             #print('9')
-            if current_time.time() >= time(hour=9):
+            if current_time.time() >= time(hour=9) and current_time.time() < time(hour=9, minute=30):
                 start_time = current_time
                 end_time = start_time + timedelta(minutes=30)
                 high = 0
@@ -98,13 +98,16 @@ class Hans123:
                 print(end_time)
                 print('8')
 
-                while current_time <= end_time and i < len(data):
+                while current_time < end_time and i < len(data):
                     current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
 
 
                     high = max(high, data['High'].iloc[i])
                     low = min(low, data['Low'].iloc[i])
+
                     i += 1
+                print(high)
+                print(low)
 
                 if data['Close'].iloc[i-1] >= high:
                     entry_price = high
@@ -122,7 +125,44 @@ class Hans123:
                     capital -= loss
                     print('Sell signal generated at', data['Dates'].iloc[i - 1], 'with entry price', entry_price, '\ncumulated capital:', capital)
 
+                if entry_price is not None:
+                    #check if take profit or stop loss is hit
+                    while i < len(data):
+                        current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
+                        if current_time.time() >= time(hour=17, minute=30):
+                            break
+
+                        if data['High'].iloc[i] >= take_profit:
+                            exit_price = take_profit
+                            print('Take profit hit at', data['Dates'].iloc[i], 'with exit price', exit_price)
+
+                        elif data['Low'].iloc[i] <= stop_loss:
+                            exit_price = stop_loss
+                            print('Stop loss hit at', data['Dates'].iloc[i], 'with exit price', exit_price)
+
+                            break
+
+
+
+                        i += 1
+
+                    #calculate return on trade and update capital
+                    if exit_price is not None:
+                        if entry_price < exit_price:
+                            return_pct = (exit_price - entry_price) / entry_price
+                            print('Trade return:', return_pct, 'with entry capital:', capital)
+                            capital += capital * return_pct
+
+                        else:
+                            return_pct = (entry_price - exit_price) / entry_price
+                            print('Trade return:', -return_pct, 'with entry capital:', capital)
+
+                entry_price = None
+
+
+
             i += 1
+
 
         return capital, entry_price, take_profit, stop_loss
 
