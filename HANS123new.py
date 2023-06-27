@@ -112,7 +112,7 @@ class Hans123:
                     take_profit = entry_price + (self.rr_ratio) * (entry_price - stop_loss)
                     profit = position_size * (take_profit - entry_price)
                     capital += profit
-                    print('Buy signal generated at', data['Dates'].iloc[i - 1])
+                    print('Buy signal generated at', data['Dates'].iloc[i - 1], 'with entry price', entry_price, '\ncumulated capital:', capital)
 
                 elif data['Close'].iloc[i - 1] <= low:
                     entry_price = low
@@ -120,7 +120,7 @@ class Hans123:
                     take_profit = entry_price - (self.rr_ratio * (stop_loss - entry_price))
                     loss = position_size * (stop_loss - entry_price)
                     capital -= loss
-                    print('Sell signal generated at', data['Dates'].iloc[i - 1])
+                    print('Sell signal generated at', data['Dates'].iloc[i - 1], 'with entry price', entry_price, '\ncumulated capital:', capital)
 
             i += 1
 
