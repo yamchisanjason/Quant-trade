@@ -93,6 +93,8 @@ class Hans123:
 
         # loop-through all the data
         i = 0
+        trade_executed = False
+
         while i < len(data):
             # wait for 30 mins and record high and low prices
             current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
@@ -119,12 +121,17 @@ class Hans123:
                 print('-')
 
             elif  current_time.time() >= time(hour=9, minute=31) and current_time.time() <= time(hour=17, minute=30):
+                if trade_executed:
+                    i += 1
+                    continue
+
                 if data['Close'].iloc[i+1] >= high:
                     entry_price = high
                     stop_loss = low
                     take_profit = entry_price + (self.rr_ratio) * (entry_price - stop_loss)
                     profit = position_size * (take_profit - entry_price)
                     capital += profit
+                    #print('New capital:', capital)
                     print('Buy signal generated at', data['Dates'].iloc[i], 'with entry price', entry_price)
 
 
@@ -135,14 +142,19 @@ class Hans123:
                     take_profit = entry_price - (self.rr_ratio * (stop_loss - entry_price))
                     loss = position_size * (stop_loss - entry_price)
                     capital -= loss
+                    #print('New capital:', capital)
                     print('Sell signal generated at', data['Dates'].iloc[i], 'with entry price', entry_price)
 
 
                 if entry_price is not None:
+                    trade_executed = True
+
                     print('Entry_price:', entry_price)
+
                     #check if take profit or stop loss is hit
                     while i < len(data):
                         current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
+
                         if current_time.time() >= time(hour=17, minute=30):
                             break
 
@@ -151,9 +163,10 @@ class Hans123:
 
                             if data['High'].iloc[i] >= take_profit:
                                 exit_price = take_profit
-                                return_pct = (exit_price - entry_price) / entry_price
+                                return_pct = (exit_price - entry_price) / entry_price / 100
+                                print('return pct:', return_pct)
                                 print('Trade return:', return_pct, 'with entry capital:', capital)
-                                capital += capital * return_pct
+                                #capital += position_size * return_pct
                                 print('Cumulated Capital:', capital)
                                 num_winning_trades_buy += 1
                                 print('Take profit hit at', data['Dates'].iloc[i], 'with exit price', exit_price)
@@ -161,9 +174,10 @@ class Hans123:
 
                             elif data['Low'].iloc[i] <= stop_loss:
                                 exit_price = stop_loss
-                                return_pct = (entry_price - exit_price) / entry_price
+                                return_pct = (entry_price - exit_price) / entry_price / 100
+                                print('return pct:', return_pct)
                                 print('Trade return:', -return_pct, 'with entry capital:', capital)
-                                capital += capital * return_pct
+                                #capital -= position_size * return_pct
                                 print('Cumulated Capital:', capital)
                                 num_losing_trades_buy += 1
                                 print('Stop loss hit at', data['Dates'].iloc[i], 'with exit price', exit_price)
@@ -176,7 +190,8 @@ class Hans123:
                                 exit_price = take_profit
                                 return_pct = (entry_price - exit_price) / entry_price
                                 print('Trade return:', return_pct, 'with entry capital:', capital)
-                                capital += capital * return_pct
+                                print('return pct:', return_pct)
+                                #capital += position_size * return_pct
                                 print('Cumulated Capital:', capital)
                                 num_winning_trades_sell += 1
                                 print('Take profit hit at', data['Dates'].iloc[i], 'with exit price', exit_price)
@@ -185,14 +200,26 @@ class Hans123:
                             elif data['High'].iloc[i] >= stop_loss:
                                 exit_price = stop_loss
                                 return_pct = (exit_price - entry_price) / entry_price
+                                print('return pct:', return_pct)
                                 print('Trade return:', -return_pct, 'with entry capital:', capital)
-                                capital += capital * return_pct
+                                #capital -= position_size * return_pct
                                 print('Cumulated Capital:', capital)
                                 num_losing_trades_sell += 1
                                 print('Stop loss hit at', data['Dates'].iloc[i], 'with exit price', exit_price)
                                 break
 
                         i += 1
+
+                else:
+                    i += 1
+
+
+            elif current_time.time() > time(hour=17, minute=30):
+                trade_executed = False
+                i += 1
+
+            else:
+                i += 1
 
                     # #exit trade if market close is approaching
                     # if current_time.time() >= time(hour=17, minute=25):
@@ -206,16 +233,16 @@ class Hans123:
 
 
 
-                    capital_values.append(capital)
-                    dates.append(data['Dates'].iloc[i-1])
-                    num_trades += 1
+            capital_values.append(capital)
+            dates.append(data['Dates'].iloc[i-1])
+            num_trades += 1
 
 
 
 
-                entry_price = None
+            entry_price = None
 
-            i += 1
+
 
         print(num_trades)
 
@@ -244,7 +271,7 @@ class Hans123:
 
     def run_strategy(self, EURUSDmins_data):
         #read csv
-        data = pd.read_csv(r'C:\Users\jason.yam\EURUSDmins_data.csv')
+        data = pd.read_csv(r'C:\Users\jason.yam\USDHKDmins_data.csv')
         df = data.dropna()
         df['Dates'] = pd.to_datetime(df['Dates'], format="%d/%m/%Y %H:%M").dt.strftime("%Y.%m.%d %H:%M")
         # print(df)
@@ -277,7 +304,7 @@ class Hans123:
 
 if __name__ == '__main__':
     strategy = Hans123(initcap=10000)
-    capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\EURUSDmins_data.csv')
+    capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\USDHKDmins_data.csv')
 
 
 
