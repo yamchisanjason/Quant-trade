@@ -15,7 +15,7 @@ class Hans123:
         self.take_profit = None
         self.stop_loss = None
         self.initcap = initcap
-        self.rr_ratio = 3   #risk reward ratio 1:3
+        #self.rr_ratio = 0.6 #risk reward ratio 1:3
 
 
 
@@ -91,6 +91,11 @@ class Hans123:
         num_losing_trades_sell = 0
         num_winning_trades = 0
 
+
+
+
+
+
         # loop-through all the data
         i = 0
         trade_executed = False
@@ -99,7 +104,7 @@ class Hans123:
             # wait for 30 mins and record high and low prices
             current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
             #print('9')
-            if current_time.time() >= time(hour=9) and current_time.time() <= time(hour=9, minute=30):
+            if current_time.time() >= time(hour=9, minute=0) and current_time.time() <= time(hour=9, minute=30):
                 start_time = current_time
                 end_time = start_time + timedelta(minutes=30)
                 high = 0
@@ -120,7 +125,7 @@ class Hans123:
                 print(low)
                 print('-')
 
-            elif  current_time.time() >= time(hour=9, minute=31) and current_time.time() <= time(hour=17, minute=25):
+            elif  current_time.time() >= time(hour=9, minute=31) and current_time.time() <= time(hour=15, minute=25):
                 if trade_executed:
                     i += 1
                     continue
@@ -128,7 +133,7 @@ class Hans123:
                 if data['Close'].iloc[i+1] >= high:
                     entry_price = high
                     stop_loss = low
-                    take_profit = entry_price + (self.rr_ratio) * (entry_price - stop_loss)
+                    take_profit = entry_price + (rr_ratio) * (entry_price - stop_loss)
                     # predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=10)
                     # take_profit = max(take_profit, predicted_take_profit)
                     profit = position_size * (take_profit - entry_price)
@@ -141,7 +146,7 @@ class Hans123:
                 elif data['Close'].iloc[i+1] <= low:
                     entry_price = low
                     stop_loss = high
-                    take_profit = entry_price - (self.rr_ratio * (stop_loss - entry_price))
+                    take_profit = entry_price - (rr_ratio * (stop_loss - entry_price))
                     # predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=10)
                     # take_profit = min(take_profit, predicted_take_profit)
                     loss = position_size * (stop_loss - entry_price)
@@ -161,7 +166,7 @@ class Hans123:
                     while i < len(data):
                         current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
 
-                        if current_time.time() >= time(hour=17, minute=30):
+                        if current_time.time() >= time(hour=15, minute=30):
                             break
 
                             # Buy condition
@@ -231,13 +236,20 @@ class Hans123:
                 capital_values.append(capital)
                 dates.append(data['Dates'].iloc[i - 1])
 
-            #exit trade if market close is approaching
-            #elif current_time.time() == time(hour=17, minute=25):
+            # #exit trade if market close is approaching
+            # elif current_time.time() == time(hour=17, minute=25):
+            #     if entry_price is not None:
+            #         #buy condition
+            #         if data['Close'].iloc[i] > entry_price:
+
+
+
+                    #sell condition
 
 
 
 
-            elif current_time.time() > time(hour=17, minute=25):
+            elif current_time.time() > time(hour=15, minute=25):
                 trade_executed = False
                 i += 1
 
@@ -276,12 +288,12 @@ class Hans123:
 
 
         print(capital_values)
-        #plot the cumulated capital over time
-        plt.plot(dates, capital_values)
-        plt.xlabel('Time')
-        plt.ylabel('Cumulated Capital')
-        plt.xticks(rotation=45)
-        plt.show()
+        # #plot the cumulated capital over time
+        # plt.plot(dates, capital_values)
+        # plt.xlabel('Time')
+        # plt.ylabel('Cumulated Capital')
+        # plt.xticks(rotation=45)
+        # plt.show()
 
 
 
@@ -290,9 +302,9 @@ class Hans123:
 
 
 
-    def run_strategy(self, EURUSDmins_data):
+    def run_strategy(self, sharpe_ratio):
         #read csv
-        data = pd.read_csv(r'C:\Users\jason.yam\data\USDHKDmins_data.csv')
+        data = pd.read_csv(r'C:\Users\jason.yam\data\EURUSDmins_data.csv')
         df = data.dropna()
         df['Dates'] = pd.to_datetime(df['Dates'], format="%d/%m/%Y %H:%M").dt.strftime("%Y.%m.%d %H:%M")
         # print(df)
@@ -310,7 +322,7 @@ class Hans123:
         daily_returns = returns / (len(data) / (24*60))
         mean = np.mean(data['Close'])
         std = np.std(data['Close'])
-        sharpe_ratio = (returns - 0.0377) / std        #assume risk-free rate = 3.77%
+        sharpe_ratio = (returns - 0.025) / std        #assume risk-free rate = 2.50%
 
         print('Final Capital:', capital)
         print('Entry Price:', self.initcap)
@@ -325,8 +337,19 @@ class Hans123:
 
 
 if __name__ == '__main__':
-    strategy = Hans123(initcap=10000)
-    capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\data\USDHKDmins_data.csv')
+    strategy = Hans123(initcap=10000000)
+    # sharpe_ratios = []
+    for rr_ratio in np.arange(0, 1.1, 0.1):
+        print(f'Running strategy with risk-reward ratio: {rr_ratio:.1f}')
+        capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\data\EURUSDmins_data.csv')
+        # sharpe_ratio = strategy.run_strategy(sharpe_ratio)
+        # sharpe_ratios.append(sharpe_ratio)
+
+    # plt.plot(rr_ratios, sharpe_ratios)
+    # plt.xlabel('Risk-Reward Ratio')
+    # plt.ylabel('Sharpe Ratio')
+    # plt.title('Sharpe Ratio vs. Risk-Reward Ratio')
+    # plt.show()
 
 
 
