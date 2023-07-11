@@ -73,10 +73,10 @@ class Hans123:
 
     def trading_strategy(self, data):
         # set initial values
-        capital = self.initcap
+        capital = 10000000
         take_profit = 0
         stop_loss = 0
-        position_size = capital * 0.01
+        position_size = capital * 1
         start_time = None
         end_time = None
         high = 0
@@ -125,11 +125,10 @@ class Hans123:
                 print(low)
                 print('-')
 
-            elif  current_time.time() >= time(hour=9, minute=31) and current_time.time() <= time(hour=15, minute=25):
+            elif  current_time.time() >= time(hour=9, minute=31) and current_time.time() <= time(hour=17, minute=25):
                 if trade_executed:
                     i += 1
                     continue
-
                 if data['Close'].iloc[i+1] >= high:
                     entry_price = high
                     stop_loss = low
@@ -166,7 +165,7 @@ class Hans123:
                     while i < len(data):
                         current_time = datetime.strptime(data['Dates'].iloc[i], "%Y.%m.%d %H:%M")
 
-                        if current_time.time() >= time(hour=15, minute=30):
+                        if current_time.time() >= time(hour=17, minute=30):
                             break
 
                             # Buy condition
@@ -199,7 +198,7 @@ class Hans123:
                                 break
 
                         # Sell condition
-                        else:
+                        elif entry_price <= stop_loss:
 
                             if data['Low'].iloc[i] <= take_profit:
                                 exit_price = take_profit
@@ -249,7 +248,7 @@ class Hans123:
 
 
 
-            elif current_time.time() > time(hour=15, minute=25):
+            elif current_time.time() > time(hour=17, minute=25):
                 trade_executed = False
                 i += 1
 
@@ -288,7 +287,7 @@ class Hans123:
 
 
         print(capital_values)
-        # #plot the cumulated capital over time
+        #plot the cumulated capital over time
         # plt.plot(dates, capital_values)
         # plt.xlabel('Time')
         # plt.ylabel('Cumulated Capital')
@@ -304,7 +303,7 @@ class Hans123:
 
     def run_strategy(self, sharpe_ratio):
         #read csv
-        data = pd.read_csv(r'C:\Users\jason.yam\data\EURUSDmins_data.csv')
+        data = pd.read_csv(r'C:\Users\jason.yam\data\USDJPYmins_data.csv')
         df = data.dropna()
         df['Dates'] = pd.to_datetime(df['Dates'], format="%d/%m/%Y %H:%M").dt.strftime("%Y.%m.%d %H:%M")
         # print(df)
@@ -341,7 +340,7 @@ if __name__ == '__main__':
     # sharpe_ratios = []
     for rr_ratio in np.arange(0, 1.1, 0.1):
         print(f'Running strategy with risk-reward ratio: {rr_ratio:.1f}')
-        capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\data\EURUSDmins_data.csv')
+        capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\data\USDJPYmins_data.csv')
         # sharpe_ratio = strategy.run_strategy(sharpe_ratio)
         # sharpe_ratios.append(sharpe_ratio)
 
