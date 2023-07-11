@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import quantstats as qs
-from scipy import stats
+import statistics
 import datetime
 from datetime import datetime, timedelta, time
 import matplotlib.pyplot as plt
@@ -76,7 +76,6 @@ class Hans123:
         capital = 10000000
         take_profit = 0
         stop_loss = 0
-        position_size = capital * 1
         start_time = None
         end_time = None
         high = 0
@@ -135,7 +134,7 @@ class Hans123:
                     take_profit = entry_price + (rr_ratio) * (entry_price - stop_loss)
                     # predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=10)
                     # take_profit = max(take_profit, predicted_take_profit)
-                    profit = position_size * (take_profit - entry_price)
+                    profit = capital * (take_profit - entry_price)
                     #capital += profit
                     #print('New capital:', capital)
                     print('Buy signal generated at', data['Dates'].iloc[i], 'with entry price', entry_price)
@@ -148,7 +147,7 @@ class Hans123:
                     take_profit = entry_price - (rr_ratio * (stop_loss - entry_price))
                     # predicted_take_profit = self.build_train_lstm_model(data.iloc[i:], window_size=10)
                     # take_profit = min(take_profit, predicted_take_profit)
-                    loss = position_size * (stop_loss - entry_price)
+                    loss = capital * (stop_loss - entry_price)
                     #capital -= loss
                     #print('New capital:', capital)
                     print('Sell signal generated at', data['Dates'].iloc[i], 'with entry price', entry_price)
@@ -176,7 +175,7 @@ class Hans123:
                                 return_pct = (exit_price - entry_price) / entry_price
                                 print('return pct:', return_pct)
                                 print('Trade return:', return_pct)
-                                capital += position_size * (exit_price - entry_price)
+                                capital += capital * (exit_price - entry_price)
 
                                 num_winning_trades_buy += 1
                                 num_trades += 1
@@ -189,7 +188,7 @@ class Hans123:
                                 return_pct = (entry_price - exit_price) / entry_price
                                 print('return pct:', return_pct)
                                 print('Trade return:', -return_pct)
-                                capital -= position_size * (entry_price - exit_price)
+                                capital -= capital * (entry_price - exit_price)
 
                                 num_losing_trades_buy += 1
                                 num_trades += 1
@@ -205,7 +204,7 @@ class Hans123:
                                 return_pct = (entry_price - exit_price) / entry_price
                                 print('Trade return:', return_pct)
                                 print('return pct:', return_pct)
-                                capital += position_size * (entry_price - exit_price)
+                                capital += capital * (entry_price - exit_price)
 
                                 num_winning_trades_sell += 1
                                 num_trades += 1
@@ -218,7 +217,7 @@ class Hans123:
                                 return_pct = (exit_price - entry_price) / entry_price
                                 print('return pct:', return_pct)
                                 print('Trade return:', -return_pct)
-                                capital -= position_size * (exit_price - entry_price)
+                                capital -= capital * (exit_price - entry_price)
 
                                 num_losing_trades_sell += 1
                                 num_trades += 1
@@ -301,9 +300,9 @@ class Hans123:
 
 
 
-    def run_strategy(self, sharpe_ratio):
+    def run_strategy(self, rr_ratio):
         #read csv
-        data = pd.read_csv(r'C:\Users\jason.yam\data\USDJPYmins_data.csv')
+        data = pd.read_csv(r'C:\Users\jason.yam\data\AUDUSDmins_data.csv')
         df = data.dropna()
         df['Dates'] = pd.to_datetime(df['Dates'], format="%d/%m/%Y %H:%M").dt.strftime("%Y.%m.%d %H:%M")
         # print(df)
@@ -318,10 +317,10 @@ class Hans123:
 
         #statistics
         returns = (capital - self.initcap) / self.initcap
-        daily_returns = returns / (len(data) / (24*60))
+        daily_returns = returns / (len(data) / (24 * 60))
         mean = np.mean(data['Close'])
         std = np.std(data['Close'])
-        sharpe_ratio = (returns - 0.025) / std        #assume risk-free rate = 2.50%
+        sharpe_ratio = returns / std  #assume risk-free rate = 2.50%
 
         print('Final Capital:', capital)
         print('Entry Price:', self.initcap)
@@ -340,7 +339,7 @@ if __name__ == '__main__':
     # sharpe_ratios = []
     for rr_ratio in np.arange(0, 1.1, 0.1):
         print(f'Running strategy with risk-reward ratio: {rr_ratio:.1f}')
-        capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\data\USDJPYmins_data.csv')
+        capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\data\AUDUSDmins_data.csv')
         # sharpe_ratio = strategy.run_strategy(sharpe_ratio)
         # sharpe_ratios.append(sharpe_ratio)
 
