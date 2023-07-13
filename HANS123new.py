@@ -175,7 +175,7 @@ class Hans123:
                                 return_pct = (exit_price - entry_price) / entry_price
                                 print('return pct:', return_pct)
                                 print('Trade return:', return_pct)
-                                capital += capital * (exit_price - entry_price)
+                                capital += capital * ((exit_price - entry_price) / entry_price)
 
                                 num_winning_trades_buy += 1
                                 num_trades += 1
@@ -188,7 +188,7 @@ class Hans123:
                                 return_pct = (entry_price - exit_price) / entry_price
                                 print('return pct:', return_pct)
                                 print('Trade return:', -return_pct)
-                                capital -= capital * (entry_price - exit_price)
+                                capital -= capital * ((entry_price - exit_price) / entry_price)
 
                                 num_losing_trades_buy += 1
                                 num_trades += 1
@@ -204,7 +204,7 @@ class Hans123:
                                 return_pct = (entry_price - exit_price) / entry_price
                                 print('Trade return:', return_pct)
                                 print('return pct:', return_pct)
-                                capital += capital * (entry_price - exit_price)
+                                capital += capital * ((entry_price - exit_price) / entry_price)
 
                                 num_winning_trades_sell += 1
                                 num_trades += 1
@@ -217,7 +217,7 @@ class Hans123:
                                 return_pct = (exit_price - entry_price) / entry_price
                                 print('return pct:', return_pct)
                                 print('Trade return:', -return_pct)
-                                capital -= capital * (exit_price - entry_price)
+                                capital -= capital * ((exit_price - entry_price) / entry_price)
 
                                 num_losing_trades_sell += 1
                                 num_trades += 1
@@ -286,7 +286,7 @@ class Hans123:
 
 
         print(capital_values)
-        #plot the cumulated capital over time
+        # #plot the cumulated capital over time
         # plt.plot(dates, capital_values)
         # plt.xlabel('Time')
         # plt.ylabel('Cumulated Capital')
@@ -302,7 +302,7 @@ class Hans123:
 
     def run_strategy(self, rr_ratio):
         #read csv
-        data = pd.read_csv(r'C:\Users\jason.yam\data\AUDUSDmins_data.csv')
+        data = pd.read_csv(r'C:\Users\jason.yam\data\EURUSDmins_data.csv')
         df = data.dropna()
         df['Dates'] = pd.to_datetime(df['Dates'], format="%d/%m/%Y %H:%M").dt.strftime("%Y.%m.%d %H:%M")
         # print(df)
@@ -337,9 +337,9 @@ class Hans123:
 if __name__ == '__main__':
     strategy = Hans123(initcap=10000000)
     # sharpe_ratios = []
-    for rr_ratio in np.arange(0, 1.1, 0.1):
+    for rr_ratio in np.arange(0, 1.3, 0.1):
         print(f'Running strategy with risk-reward ratio: {rr_ratio:.1f}')
-        capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\data\AUDUSDmins_data.csv')
+        capital, entry_price, take_profit, stop_loss = strategy.run_strategy(r'C:\Users\jason.yam\data\EURUSDmins_data.csv')
         # sharpe_ratio = strategy.run_strategy(sharpe_ratio)
         # sharpe_ratios.append(sharpe_ratio)
 
